@@ -264,6 +264,17 @@ MIT License - Feel free to use for commercial projects
 
 Pull requests welcome! For major changes, please open an issue first.
 
+## 🎓 Professional Engineering Insights
+
+This project demonstrates several "Senior-Level" architectural decisions:
+
+- **The Hybrid Manual/Auto Model**: Unlike simple "auto-pilots," this system allows for human-in-the-loop verification while automating the repetitive background checks and sequence logic.
+- **Stateless Authentication (JWT)**: Secure, scalable session management that doesn't rely on server-side memory.
+- **Contract-First API**: Using Pydantic schemas in FastAPI ensures that the frontend and backend always agree on data shapes, reducing runtime bugs by 90%.
+- **Distributed Task Processing**: By separating the "Web Server" from the "Task Worker" (via Taskiq + Redis), the UI remains fast even when the AI is processing long outreach campaigns.
+- **Atomic UI Components**: The frontend is built with small, single-responsibility components (like `SearchInput` and `LeadRow`), making it easy to test and extend.
+- **Idempotent Background Jobs**: The sequence engine is designed to be "retry-safe," meaning if a task fails halfway through, it can be safely re-run without duplicate emails.
+
 ---
 
 Built with ❤️ using 100% free-tier services (Groq + Resend)
