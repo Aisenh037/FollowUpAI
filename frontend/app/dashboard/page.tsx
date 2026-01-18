@@ -12,6 +12,14 @@ export default function DashboardPage() {
 
     useEffect(() => {
         fetchStats();
+
+        // Pro Tip: Set up a "Heartbeat" interval to keep the dashboard alive
+        const interval = setInterval(() => {
+            fetchStats();
+        }, 30000); // 30 seconds
+
+        // Cleanup: Important to prevent the interval from running when the user leaves the page!
+        return () => clearInterval(interval);
     }, []);
 
     const fetchStats = async () => {
@@ -19,7 +27,8 @@ export default function DashboardPage() {
             const response = await api.get('/api/agent/stats');
             setStats(response.data);
         } catch (error: any) {
-            toast.error('Failed to load dashboard stats');
+            console.error('Failed to load dashboard stats');
+            // We don't toast on every background refresh to avoid annoying the user
         } finally {
             setLoading(false);
         }

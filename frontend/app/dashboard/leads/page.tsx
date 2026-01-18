@@ -2,9 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import api from '@/lib/api';
-import { Lead, LeadCreate } from '@/types';
+import { Lead, LeadCreate, Sequence } from '@/types';
 import toast from 'react-hot-toast';
 import { format } from 'date-fns';
+import SearchInput from '@/components/SearchInput';
+import LeadRow from '@/components/LeadRow';
 
 export default function LeadsPage() {
     const [leads, setLeads] = useState<Lead[]>([]);
@@ -34,6 +36,7 @@ export default function LeadsPage() {
     const [isSendingCustom, setIsSendingCustom] = useState(false);
     const [sequences, setSequences] = useState<Sequence[]>([]);
     const [isAssigning, setIsAssigning] = useState<number | null>(null);
+    const [searchTerm, setSearchTerm] = useState('');
 
     useEffect(() => {
         fetchLeads();
@@ -188,14 +191,6 @@ export default function LeadsPage() {
         }
     };
 
-    const getStatusBadge = (status: string) => {
-        const colors = {
-            active: 'bg-green-100 text-green-700',
-            needs_followup: 'bg-yellow-100 text-yellow-700',
-            stalled: 'bg-red-100 text-red-700',
-        };
-        return colors[status as keyof typeof colors] || 'bg-gray-100 text-gray-700';
-    };
 
     return (
         <div className="space-y-8">
@@ -230,6 +225,12 @@ export default function LeadsPage() {
                 </div>
             </div>
 
+            <SearchInput
+                value={searchTerm}
+                onChange={setSearchTerm}
+                placeholder="Filter by name, email or company..."
+            />
+
             {loading ? (
                 <div className="flex items-center justify-center h-64">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
@@ -259,109 +260,29 @@ export default function LeadsPage() {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
-                                {leads.map((lead) => (
-                                    <tr key={lead.id} className="group hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="flex items-center">
-                                                <div className="w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center text-primary-600 dark:text-primary-400 font-bold text-xs mr-3">
-                                                    {lead.name[0].toUpperCase()}
-                                                </div>
-                                                <span className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-primary-600 transition-colors">
-                                                    {lead.name}
-                                                </span>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600 dark:text-slate-400">
-                                            {lead.email}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600 dark:text-slate-400">
-                                            {lead.phone || '-'}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-500 dark:text-slate-400">
-                                            {lead.company || '-'}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${getStatusBadge(lead.status)}`}>
-                                                {lead.status.replace('_', ' ')}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <select
-                                                disabled={isAssigning === lead.id}
-                                                value={lead.sequence_id || ''}
-                                                onChange={(e) => handleAssignSequence(lead.id, e.target.value ? parseInt(e.target.value) : null)}
-                                                className="text-[10px] font-bold bg-slate-100 dark:bg-slate-800 border-none rounded-lg px-2 py-1 outline-none focus:ring-1 focus:ring-primary-500 w-32"
-                                            >
-                                                <option value="">No Sequence</option>
-                                                {sequences.map(s => (
-                                                    <option key={s.id} value={s.id}>{s.name}</option>
-                                                ))}
-                                            </select>
-                                            {lead.sequence_id && (
-                                                <p className="text-[9px] text-slate-400 mt-1 ml-1 font-bold italic">
-                                                    Step {lead.current_step_number + 1}
-                                                </p>
-                                            )}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">
-                                            {lead.last_contacted_date
-                                                ? format(new Date(lead.last_contacted_date), 'MMM dd, yyyy')
-                                                : <span className="text-slate-400 italic">Never</span>
-                                            }
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                            <div className="flex items-center justify-end space-x-2">
-                                                {lead.phone && (
-                                                    <button
-                                                        onClick={() => openWhatsApp(lead.phone!, lead.name)}
-                                                        className="text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 p-2 rounded-lg transition-all"
-                                                        title="WhatsApp"
-                                                    >
-                                                        📱
-                                                    </button>
-                                                )}
-                                                <button
-                                                    onClick={() => {
-                                                        setSelectedLead(lead);
-                                                        setShowCustomEmailModal(true);
-                                                    }}
-                                                    className="text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-900/20 p-2 rounded-lg transition-all"
-                                                    title="Custom Email"
-                                                >
-                                                    ✉️
-                                                </button>
-                                                {lead.contact_type === 'client' ? (
-                                                    <button
-                                                        onClick={() => handleRunLeadAgent(lead.id, 'saas_offer')}
-                                                        disabled={actionLoading === lead.id}
-                                                        className="text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20 p-2 rounded-lg transition-all flex items-center space-x-1"
-                                                        title="Send SaaS Service Offer"
-                                                    >
-                                                        <span>{actionLoading === lead.id ? '⏳' : '📧'}</span>
-                                                        <span className="text-[10px] font-black uppercase">SaaS Offer</span>
-                                                    </button>
-                                                ) : (
-                                                    <button
-                                                        onClick={() => handleRunLeadAgent(lead.id)}
-                                                        disabled={actionLoading === lead.id}
-                                                        className="text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 p-2 rounded-lg transition-all flex items-center space-x-1"
-                                                        title="Take Followup"
-                                                    >
-                                                        <span>{actionLoading === lead.id ? '⏳' : '🚀'}</span>
-                                                        <span className="text-[10px] font-black uppercase">Followup</span>
-                                                    </button>
-                                                )}
-                                                <button
-                                                    onClick={() => handleDelete(lead.id)}
-                                                    className="text-slate-400 hover:text-red-500 transition-colors p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20"
-                                                    title="Delete Lead"
-                                                >
-                                                    🗑️
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))}
+                                {leads
+                                    .filter(lead =>
+                                        lead.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                        lead.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                        (lead.company && lead.company.toLowerCase().includes(searchTerm.toLowerCase()))
+                                    )
+                                    .map((lead) => (
+                                        <LeadRow
+                                            key={lead.id}
+                                            lead={lead}
+                                            sequences={sequences}
+                                            isAssigning={isAssigning === lead.id}
+                                            actionLoading={actionLoading === lead.id}
+                                            onAssignSequence={handleAssignSequence}
+                                            onDelete={handleDelete}
+                                            onRunAgent={handleRunLeadAgent}
+                                            onSendEmail={(l) => {
+                                                setSelectedLead(l);
+                                                setShowCustomEmailModal(true);
+                                            }}
+                                            onWhatsApp={openWhatsApp}
+                                        />
+                                    ))}
                             </tbody>
                         </table>
                     </div>
