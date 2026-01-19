@@ -20,3 +20,7 @@ taskiq==0.11.0
 taskiq-redis==0.5.3
 redis==5.0.1
 loguru==0.7.2
+sentry-sdk[fastapi]==1.40.0
+requests==2.31.0
+psutil==5.9.8
+twilio==9.0.4

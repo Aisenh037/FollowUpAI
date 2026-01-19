@@ -5,8 +5,23 @@ from config import get_settings
 from services.database import engine, Base
 from routes import auth, leads, agent, discovery
 from tkq import broker
+import sentry_sdk
+from sentry_sdk.integrations.fastapi import FastApiIntegration
+from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
 
 settings = get_settings()
+
+# Initialize Sentry (Industry Standard Observability)
+if settings.SENTRY_DSN:
+    sentry_sdk.init(
+        dsn=settings.SENTRY_DSN,
+        integrations=[
+            FastApiIntegration(),
+            SqlalchemyIntegration(),
+        ],
+        traces_sample_rate=1.0,
+        environment=settings.ENV
+    )
 
 # Create database tables
 Base.metadata.create_all(bind=engine)

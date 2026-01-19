@@ -4,12 +4,17 @@ import "./globals.css";
 import { Toaster } from "react-hot-toast";
 import { ThemeProvider } from "next-themes";
 
+import * as Sentry from "@sentry/nextjs";
+
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const outfit = Outfit({ subsets: ["latin"], variable: "--font-outfit" });
 
 export const metadata: Metadata = {
     title: "FollowUpAI - AI Sales Follow-Up Agent",
     description: "Autonomous AI agent for sales follow-up and pipeline recovery",
+    other: {
+        ...Sentry.getTraceData(),
+    },
 };
 
 export default function RootLayout({

@@ -9,7 +9,7 @@ from schemas.sequence import SequenceCreate, SequenceResponse
 
 router = APIRouter(prefix="/api/sequences", tags=["Sequences"])
 
-@router.post("/", response_model=SequenceResponse)
+@router.post("", response_model=SequenceResponse)
 def create_sequence(
     request: SequenceCreate,
     db: Session = Depends(get_db),
@@ -42,10 +42,29 @@ def create_sequence(
     db.refresh(sequence)
     return sequence
 
-@router.get("/", response_model=List[SequenceResponse])
+@router.get("", response_model=List[SequenceResponse])
 def get_sequences(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """Get all available sequences."""
     return db.query(Sequence).all()
+
+@router.delete("/{sequence_id}")
+def delete_sequence(
+    sequence_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Permanently remove a sequence and its steps."""
+    sequence = db.query(Sequence).filter(Sequence.id == sequence_id).first()
+    if not sequence:
+        raise HTTPException(status_code=404, detail="Sequence not found")
+    
+    # First, detach leads from this sequence
+    from models.lead import Lead
+    db.query(Lead).filter(Lead.sequence_id == sequence_id).update({"sequence_id": None, "current_step_number": 0})
+    
+    db.delete(sequence)
+    db.commit()
+    return {"success": True, "message": "Sequence terminated"}

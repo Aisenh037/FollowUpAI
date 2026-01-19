@@ -1,10 +1,9 @@
 """Web search tool for sourcing leads and HR contacts."""
 import httpx
-import logging
+from loguru import logger
 from typing import List, Dict, Any
 from config import get_settings
 
-logger = logging.getLogger(__name__)
 settings = get_settings()
 
 class SearchTool:
@@ -43,9 +42,11 @@ class SearchTool:
                 response = await client.post(self.base_url, json=payload, timeout=30.0)
                 response.raise_for_status()
                 data = response.json()
-                return data.get("results", [])
+                results = data.get("results", [])
+                logger.info(f"Search Strategy: Query '{query}' yielded {len(results)} results")
+                return results
         except Exception as e:
-            logger.error(f"Search failed: {str(e)}")
+            logger.error(f"Search Execution Failure: {str(e)}")
             return []
 
 search_tool = SearchTool()

@@ -1,22 +1,63 @@
 version: '3.8'
 
 services:
+  backend:
+    build: ./backend
+    container_name: followupai_backend
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./backend/.env
+    depends_on:
+      - postgres
+      - redis
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/followupai
+      - REDIS_URL=redis://redis:6379/0
+
+  worker:
+    build: ./backend
+    container_name: followupai_worker
+    command: taskiq worker worker:broker worker
+    env_file:
+      - ./backend/.env
+    depends_on:
+      - postgres
+      - redis
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/followupai
+      - REDIS_URL=redis://redis:6379/0
+
+  scheduler:
+    build: ./backend
+    container_name: followupai_scheduler
+    command: taskiq scheduler tkq:scheduler
+    env_file:
+      - ./backend/.env
+    depends_on:
+      - postgres
+      - redis
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/followupai
+      - REDIS_URL=redis://redis:6379/0
+
   postgres:
     image: postgres:15-alpine
-    container_name: followupai-db
+    container_name: followupai_db
     environment:
-      POSTGRES_USER: followup
-      POSTGRES_PASSWORD: followup123
-      POSTGRES_DB: followupai
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=followupai
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U followup"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: followupai_redis
+    ports:
+      - "6379:6379"
 
 volumes:
   postgres_data:

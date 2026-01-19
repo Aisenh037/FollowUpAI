@@ -1,0 +1,85 @@
+services:
+  # 1. Backend Service (FastAPI)
+  - type: web
+    name: followupai-backend
+    runtime: docker
+    repo: https://github.com/[YOUR-USERNAME]/[YOUR-REPO] # Update this after pushing!
+    rootDir: backend
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: followupai-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: followupai-redis
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+      - key: GROQ_API_KEY
+        sync: false
+      - key: TAVILY_API_KEY
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: SENTRY_DSN
+        sync: false
+    plan: free
+    region: ohio
+
+  # 2. Worker Service (Taskiq)
+  - type: worker
+    name: followupai-worker
+    runtime: docker
+    repo: https://github.com/[YOUR-USERNAME]/[YOUR-REPO]
+    rootDir: backend
+    dockerCommand: taskiq worker worker:broker worker
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: followupai-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: followupai-redis
+          property: connectionString
+      - key: GROQ_API_KEY
+        sync: false
+      - key: TAVILY_API_KEY
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: SENTRY_DSN
+        sync: false
+    plan: free
+    region: ohio
+
+  # 3. Frontend Service (Next.js)
+  - type: web
+    name: followupai-frontend
+    runtime: docker
+    repo: https://github.com/[YOUR-USERNAME]/[YOUR-REPO]
+    rootDir: frontend
+    envVars:
+      - key: NEXT_PUBLIC_API_URL
+        fromService:
+          type: web
+          name: followupai-backend
+          property: url
+    plan: free
+    region: ohio
+
+databases:
+  # Managed PostgreSQL
+  - name: followupai-db
+    databaseName: followupai
+    user: followupai_user
+    plan: free
+    region: ohio
+
+  # Managed Redis
+  - name: followupai-redis
+    plan: free
+    region: ohio

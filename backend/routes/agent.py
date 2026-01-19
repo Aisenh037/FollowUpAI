@@ -12,42 +12,43 @@ from models.activity_log import ActivityLog
 from routes.auth import get_current_user
 from agents.agent_runner import AgentRunner
 from worker import run_agent_task, run_lead_task
+from services.communication_service import comm_service
 
 router = APIRouter(prefix="/api/agent", tags=["Agent"])
 
 
 @router.post("/run", response_model=AgentRunResponse)
-def run_agent(
+async def run_agent(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """
     Run the AI agent to process leads.
-    
-    The agent will:
-    1. Classify all leads
-    2. Generate follow-up emails for stalled/needs_followup leads
-    3. Send emails
-    4. Log all activities
     """
     try:
-        # result = agent.run() # OLD SYNC WAY
-        run_agent_task.kiq(current_user.id)
+        # Await the dispatch to ensure Redis connection works
+        await run_agent_task.kiq(current_user.id)
+        
         return {
             "success": True,
             "leads_processed": 0,
             "emails_sent": 0,
-            "message": "Global agent run started in background."
+            "activities": [],
+            "message": "Global agent run started in background. Check your worker logs for progress!"
         }
     except Exception as e:
+        # Log specifically for the developer
+        from loguru import logger
+        logger.error(f"Failed to enqueue agent task: {str(e)}")
+        
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Agent execution failed: {str(e)}"
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Could not start agent. Is your Redis Cloud connection stable?"
         )
 
 
 @router.post("/run-lead/{lead_id}", response_model=AgentRunResponse)
-def run_lead_action(
+async def run_lead_action(
     lead_id: int,
     context_type: str | None = None,
     current_user: User = Depends(get_current_user),
@@ -57,9 +58,7 @@ def run_lead_action(
     Run the AI agent for a specific lead.
     """
     try:
-        # agent = AgentRunner(db=db, user_id=current_user.id)
-        # result = agent.run_for_lead(lead_id=lead_id, force_context=context_type)
-        run_lead_task.kiq(user_id=current_user.id, lead_id=lead_id, context_type=context_type)
+        await run_lead_task.kiq(user_id=current_user.id, lead_id=lead_id, context_type=context_type)
         
         return {
             "success": True,
@@ -99,6 +98,16 @@ def send_custom_email(
         # Update lead's last contacted date
         lead.last_contacted_date = datetime.now()
         
+        # Actually send the email
+        email_result = comm_service.send_email(
+            to_email=lead.email,
+            subject=request.subject,
+            html_content=f"<div style='font-family: sans-serif;'>{request.body.replace(chr(10), '<br>')}</div>"
+        )
+        
+        if not email_result["success"]:
+            raise Exception(f"Failed to send email: {email_result.get('error')}")
+
         # Log the activity
         from models.activity_log import ActivityLog
         activity = ActivityLog(
@@ -107,6 +116,7 @@ def send_custom_email(
             action_type="custom_email_sent",
             details={
                 "subject": request.subject,
+                "email_id": email_result.get("id"),
                 "body_snippet": request.body[:100] + "..."
             }
         )

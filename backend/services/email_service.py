@@ -32,14 +32,23 @@ class EmailService:
             dict with 'success' boolean and 'message' or 'error'
         """
         try:
-            # For Resend free tier, use the test domain
-            # Replace with your verified domain in production
-            from_email = f"{from_name} <onboarding@resend.dev>"
+            # PRO-TIP: Resend Sandbox Handling
+            # If using the test domain, you can only send to yourself.
+            # We'll automatically "reroute" for the demo to avoid 500 errors.
+            verified_to = to_email
+            is_sandbox = "onboarding@resend.dev" in settings.RESEND_FROM_EMAIL
             
+            if is_sandbox and to_email != "aisenh037@gmail.com":
+                # For demo purposes, we'll log where it was SUPPOSED to go
+                # and send it to the verified email instead.
+                from loguru import logger
+                logger.warning(f"SANDBOX MODE: Rerouting email from {to_email} to aisenh037@gmail.com")
+                verified_to = "aisenh037@gmail.com"
+
             response = resend.Emails.send({
-                "from": from_email,
-                "to": to_email,
-                "subject": subject,
+                "from": settings.RESEND_FROM_EMAIL,
+                "to": verified_to,
+                "subject": f"[DEMO to {to_email}] {subject}" if is_sandbox else subject,
                 "html": html_content
             })
             
