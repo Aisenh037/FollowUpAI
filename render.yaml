@@ -13,10 +13,9 @@ services:
         value: 3.11.5
       - key: ENV
         value: production
+      # CHANGED: Now prompts you for the URL of your EXISTING free database
       - key: DATABASE_URL
-        fromDatabase:
-          name: followup-db
-          property: connectionString
+        sync: false
       - key: REDIS_URL
         fromService:
           type: redis
@@ -28,7 +27,6 @@ services:
         value: FollowUpAI <onboarding@resend.dev>
       - key: TWILIO_WHATSAPP_NUMBER
         value: whatsapp:+14155238886
-      # These will prompt you to input them in the Render Dashboard
       - key: GROQ_API_KEY
         sync: false
       - key: RESEND_API_KEY
@@ -40,17 +38,11 @@ services:
       - key: TWILIO_AUTH_TOKEN
         sync: false
 
-  # The Redis Service
+  # The Redis Service (This usually allows multiple instances or costs very little)
   - type: redis
     name: followup-redis
     region: oregon
     plan: free
     ipAllowList: [] # Allow all internal connections
 
-databases:
-  # The PostgreSQL Database
-  - name: followup-db
-    region: oregon
-    plan: free # 30 days free, then paid.
-    databaseName: followupai
-    user: followup_user
+# DELETED: databases section (Since you already have one active free tier DB)
