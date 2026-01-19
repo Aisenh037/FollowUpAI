@@ -1,85 +1,62 @@
 services:
-  # 1. Backend Service (FastAPI)
+  # The Backend API
   - type: web
-    name: followupai-backend
-    runtime: docker
-    repo: https://github.com/[YOUR-USERNAME]/[YOUR-REPO] # Update this after pushing!
+    name: followup-backend
+    runtime: python
+    region: oregon
+    plan: free
     rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
     envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.5
+      - key: ENV
+        value: production
       - key: DATABASE_URL
         fromDatabase:
-          name: followupai-db
+          name: followup-db
           property: connectionString
       - key: REDIS_URL
         fromService:
           type: redis
-          name: followupai-redis
+          name: followup-redis
           property: connectionString
       - key: SECRET_KEY
         generateValue: true
+      - key: RESEND_FROM_EMAIL
+        value: FollowUpAI <onboarding@resend.dev>
+      # These will prompt you to input them in the Render Dashboard
       - key: GROQ_API_KEY
-        sync: false
-      - key: TAVILY_API_KEY
         sync: false
       - key: RESEND_API_KEY
         sync: false
-      - key: SENTRY_DSN
-        sync: false
-    plan: free
-    region: ohio
-
-  # 2. Worker Service (Taskiq)
-  - type: worker
-    name: followupai-worker
-    runtime: docker
-    repo: https://github.com/[YOUR-USERNAME]/[YOUR-REPO]
-    rootDir: backend
-    dockerCommand: taskiq worker worker:broker worker
-    envVars:
-      - key: DATABASE_URL
-        fromDatabase:
-          name: followupai-db
-          property: connectionString
-      - key: REDIS_URL
-        fromService:
-          type: redis
-          name: followupai-redis
-          property: connectionString
-      - key: GROQ_API_KEY
-        sync: false
       - key: TAVILY_API_KEY
         sync: false
-      - key: RESEND_API_KEY
+      - key: WHATSAPP_ACCESS_TOKEN
         sync: false
-      - key: SENTRY_DSN
-        sync: false
-    plan: free
-    region: ohio
-
-  # 3. Frontend Service (Next.js)
-  - type: web
-    name: followupai-frontend
-    runtime: docker
-    repo: https://github.com/[YOUR-USERNAME]/[YOUR-REPO]
-    rootDir: frontend
-    envVars:
-      - key: NEXT_PUBLIC_API_URL
-        fromService:
-          type: web
-          name: followupai-backend
-          property: url
-    plan: free
-    region: ohio
 
 databases:
-  # Managed PostgreSQL
-  - name: followupai-db
+  # The PostgreSQL Database
+  - name: followup-db
+    region: oregon
+    plan: free # 30 days free, then paid. Or use an external free DB like Neon.tech if prefered.
     databaseName: followupai
-    user: followupai_user
-    plan: free
-    region: ohio
+    user: followup_user
 
-  # Managed Redis
-  - name: followupai-redis
+services:
+  # Re-defining services to ensure Redis is picked up if list merging behaves oddly, 
+  # but standard YAML allows lists. 
+  # Actually, Render YAML separates top level keys.
+  # Let's verify Redis syntax usually involves 'type: redis'.
+  # Render Blueprints: https://render.com/docs/blueprint-spec
+  
+  # redis is a top-level key? No, it's a service type.
+  # But wait, Render Redis is not fully supported in Blueprints for *Free Plan* provisioning 
+  # in the same way as initial launch sometimes.
+  # Let's try to add it as a service.
+  - type: redis
+    name: followup-redis
+    region: oregon
     plan: free
-    region: ohio
+    ipAllowList: [] # Allow all internal connections
