@@ -21,7 +21,7 @@ taskiq-redis==0.5.3
 redis==5.0.1
 loguru==0.7.2
 sentry-sdk[fastapi]==1.40.0
-requests==2.31.0
+requests==2.32.4
 psutil==5.9.8
 twilio==9.0.4
 email-validator>=2.1.0
