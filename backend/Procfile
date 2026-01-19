@@ -1,0 +1,2 @@
+web: uvicorn main:app --host 0.0.0.0 --port $PORT
+worker: python -m taskiq worker backend.tkq:broker backend.worker:taskiq_broker
