@@ -36,27 +36,17 @@ services:
       - key: WHATSAPP_ACCESS_TOKEN
         sync: false
 
-databases:
-  # The PostgreSQL Database
-  - name: followup-db
-    region: oregon
-    plan: free # 30 days free, then paid. Or use an external free DB like Neon.tech if prefered.
-    databaseName: followupai
-    user: followup_user
-
-services:
-  # Re-defining services to ensure Redis is picked up if list merging behaves oddly, 
-  # but standard YAML allows lists. 
-  # Actually, Render YAML separates top level keys.
-  # Let's verify Redis syntax usually involves 'type: redis'.
-  # Render Blueprints: https://render.com/docs/blueprint-spec
-  
-  # redis is a top-level key? No, it's a service type.
-  # But wait, Render Redis is not fully supported in Blueprints for *Free Plan* provisioning 
-  # in the same way as initial launch sometimes.
-  # Let's try to add it as a service.
+  # The Redis Service
   - type: redis
     name: followup-redis
     region: oregon
     plan: free
     ipAllowList: [] # Allow all internal connections
+
+databases:
+  # The PostgreSQL Database
+  - name: followup-db
+    region: oregon
+    plan: free # 30 days free, then paid.
+    databaseName: followupai
+    user: followup_user
