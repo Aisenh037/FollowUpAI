@@ -26,6 +26,8 @@ services:
         generateValue: true
       - key: RESEND_FROM_EMAIL
         value: FollowUpAI <onboarding@resend.dev>
+      - key: TWILIO_WHATSAPP_NUMBER
+        value: whatsapp:+14155238886
       # These will prompt you to input them in the Render Dashboard
       - key: GROQ_API_KEY
         sync: false
@@ -33,7 +35,9 @@ services:
         sync: false
       - key: TAVILY_API_KEY
         sync: false
-      - key: WHATSAPP_ACCESS_TOKEN
+      - key: TWILIO_ACCOUNT_SID
+        sync: false
+      - key: TWILIO_AUTH_TOKEN
         sync: false
 
   # The Redis Service
