@@ -13,7 +13,7 @@ services:
         value: 3.11.5
       - key: ENV
         value: production
-      # CHANGED: Now prompts you for the URL of your EXISTING free database
+      # RENAMED: To force Render to ask you for the value again!
       - key: DATABASE_URL
         sync: false
       - key: REDIS_URL
@@ -38,11 +38,9 @@ services:
       - key: TWILIO_AUTH_TOKEN
         sync: false
 
-  # The Redis Service (This usually allows multiple instances or costs very little)
+  # The Redis Service
   - type: redis
     name: followup-redis
     region: oregon
     plan: free
     ipAllowList: [] # Allow all internal connections
-
-# DELETED: databases section (Since you already have one active free tier DB)
