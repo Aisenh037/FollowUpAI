@@ -202,4 +202,4 @@ FollowUpAI/
 ---
 
 ### 👨‍💻 Author
-Built by **[Your Name]** as a demonstration of advanced AI Engineering.
+Built with ❤️ by **Karan** as a demonstration of advanced AI Engineering.
