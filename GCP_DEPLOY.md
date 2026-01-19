@@ -18,6 +18,9 @@ gcloud services enable artifactregistry.googleapis.com \
 ```
 
 ### C. Create Artifact Registry
+> **DevOps Concept: Immutable Artifacts**
+> In a professional pipeline, we never deploy "code" directly. We build "Artifacts" (Docker Images) that are versioned and immutable. This ensures that what you tested in Staging is *bit-for-bit identical* to what runs in Production.
+
 Create a repository for your Docker images:
 ```bash
 gcloud artifacts repositories create followup-ai-repo \
@@ -37,20 +40,22 @@ gcloud auth configure-docker us-central1-docker.pkg.dev
 ### B. Build and Push Backend
 ```bash
 # Tag the image
-docker build -t us-central1-docker.pkg.dev/[PROJECT_ID]/followup-ai-repo/backend:latest ./backend
+docker build -t us-central1-docker.pkg.dev/true-alliance-483614-k6/followup-ai-repo/backend:latest ./backend
 
 # Push to Registry
-docker push us-central1-docker.pkg.dev/[PROJECT_ID]/followup-ai-repo/backend:latest
+docker push us-central1-docker.pkg.dev/true-alliance-483614-k6/followup-ai-repo/backend:latest
 ```
 
 ---
 
 ## 🚀 3. Deployment to Cloud Run
+> **DevOps Concept: Stateless Compute (CaaS)**
+> Cloud Run is "Containers as a Service". It spins up your container only when a request comes in (scaling from 0 to N). For this to work, your app must be **Stateless**—meaning it saves no data to the local disk, but instead uses external services like Postgres and Redis.
 
 ### A. Deploy Backend API
 ```bash
 gcloud run deploy followup-api \
-    --image us-central1-docker.pkg.dev/[PROJECT_ID]/followup-ai-repo/backend:latest \
+    --image us-central1-docker.pkg.dev/true-alliance-483614-k6/followup-ai-repo/backend:latest \
     --platform managed \
     --region us-central1 \
     --allow-unauthenticated \
@@ -61,7 +66,7 @@ gcloud run deploy followup-api \
 Since the Worker isn't an HTTP server, we deploy it with no ingress:
 ```bash
 gcloud run deploy followup-worker \
-    --image us-central1-docker.pkg.dev/[PROJECT_ID]/followup-ai-repo/backend:latest \
+    --image us-central1-docker.pkg.dev/true-alliance-483614-k6/followup-ai-repo/backend:latest \
     --platform managed \
     --region us-central1 \
     --no-allow-unauthenticated \
@@ -80,11 +85,35 @@ Copy the connection strings from these services and update your `env-vars-file` 
 
 ---
 
-## 🎨 5. Frontend (Vercel)
-1. Push your code to a GitHub repository.
-2. Link the repository to [Vercel](https://vercel.com/).
-3. **Important**: Set `NEXT_PUBLIC_API_URL` to your **GCP Cloud Run URL**.
-4. Deploy!
+## 🎨 5. Frontend Options (Choose One)
+
+### Option A: Vercel (Recommended for Performance)
+1. Push code to GitHub.
+2. Link repo to Vercel.
+3. Set `NEXT_PUBLIC_API_URL` to your Backend Cloud Run URL.
+
+### Option B: Google Cloud Run (Recommended for "DevOps Flex")
+Since we created a professional `Dockerfile` for the frontend, you can deploy it to GCP just like the backend!
+
+1. **Build & Push**:
+```bash
+docker build -t us-central1-docker.pkg.dev/true-alliance-483614-k6/followup-ai-repo/frontend:latest ./frontend
+docker push us-central1-docker.pkg.dev/[PROJECT_ID]/followup-ai-repo/frontend:latest
+```
+
+2. **Deploy**:
+```bash
+gcloud run deploy followup-frontend \
+    --image us-central1-docker.pkg.dev/[PROJECT_ID]/followup-ai-repo/frontend:latest \
+    --platform managed \
+    --region us-central1 \
+    --allow-unauthenticated \
+    --port 3000
+```
+
+3. **Configure**:
+   - Go to Cloud Run Console > followup-frontend > Edit & Deploy New Revision.
+   - Add Environment Variable: `NEXT_PUBLIC_API_URL` = [Your Backend Service URL].
 
 ---
 *Your MVP is now live on a Pro-Grade Cloud Stack!*

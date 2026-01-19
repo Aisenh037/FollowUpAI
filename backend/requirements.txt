@@ -9,13 +9,13 @@ python-multipart==0.0.18
 pydantic==2.5.3
 pydantic-settings==2.1.0
 python-dotenv==1.0.0
-groq==0.4.1
+groq>=0.5.0
 httpx==0.27.2
 resend==0.8.0
 alembic==1.13.1
-langgraph==0.0.26
-langchain==0.2.5
-langchain-groq==0.0.1
+langgraph>=0.0.26
+langchain>=0.2.5
+langchain-groq>=0.1.0
 taskiq==0.11.0
 taskiq-redis==0.5.3
 redis==5.0.1
